@@ -1,0 +1,119 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <title>AceroIA - Sistema de Control de Calidad</title>
+    <style>
+        body { font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; background-color: #f4f6f9; display: flex; justify-content: center; align-items: center; min-height: 100vh; margin: 0; }
+        .main-container { display: flex; width: 1000px; background-color: white; border-radius: 15px; box-shadow: 0 15px 35px rgba(0,0,0,0.1); overflow: hidden; min-height: 600px; }
+        
+        .panel-left { width: 45%; padding: 40px; background-color: #fff; border-right: 1px solid #eee; display: flex; flex-direction: column; justify-content: center; }
+        .panel-left h2 { color: #2c3e50; margin-top: 0; font-size: 1.5rem; margin-bottom: 5px; }
+        label { display: block; margin-top: 15px; color: #7f8c8d; font-weight: 600; font-size: 0.85rem; text-transform: uppercase; letter-spacing: 0.5px; }
+        input { width: 100%; padding: 10px; margin-top: 5px; border: 1px solid #dfe6e9; border-radius: 6px; box-sizing: border-box; transition: 0.3s; font-size: 1rem; color: #2c3e50; }
+        input:focus { border-color: #3498db; outline: none; background-color: #f0f8ff; }
+        
+        .input-row { display: flex; gap: 15px; }
+        .input-group { flex: 1; }
+
+        button { width: 100%; margin-top: 30px; padding: 15px; background-color: #2c3e50; color: white; border: none; border-radius: 8px; font-weight: bold; cursor: pointer; font-size: 1rem; transition: 0.3s; box-shadow: 0 4px 6px rgba(44, 62, 80, 0.2); }
+        button:hover { background-color: #34495e; transform: translateY(-2px); box-shadow: 0 6px 8px rgba(44, 62, 80, 0.3); }
+
+        /* Panel derecho */
+        .panel-right { width: 55%; background-color: #f8f9fa; display: flex; flex-direction: column; justify-content: center; align-items: center; padding: 40px; position: relative; }
+        .brand { position: absolute; top: 30px; right: 30px; font-weight: bold; color: #bdc3c7; letter-spacing: 2px; font-size: 0.9rem; }
+        
+        .result-card { background: white; padding: 40px; border-radius: 12px; box-shadow: 0 10px 30px rgba(0,0,0,0.08); text-align: center; width: 85%; transform: scale(1); transition: transform 0.3s; }
+        .result-card:hover { transform: scale(1.02); }
+        
+        .defect-name { font-size: 2.5rem; margin: 15px 0; font-weight: 800; text-transform: uppercase; line-height: 1.1; }
+        
+        .color-danger { color: #e74c3c; }
+        .color-warning { color: #f39c12; }
+        .color-success { color: #27ae60; }
+
+        /* Barra de confianza */
+        .progress-track { background: #ecf0f1; height: 25px; border-radius: 15px; overflow: hidden; margin-top: 25px; box-shadow: inset 0 2px 4px rgba(0,0,0,0.05); }
+        .progress-fill { height: 100%; display: flex; align-items: center; justify-content: center; color: white; font-weight: bold; font-size: 0.8rem; text-shadow: 0 1px 2px rgba(0,0,0,0.2); transition: width 1s ease-in-out; }
+
+        .model-info { margin-top: 30px; font-size: 0.8rem; color: #95a5a6; border-top: 1px solid #e0e0e0; padding-top: 15px; width: 100%; display: flex; justify-content: space-between; }
+    </style>
+</head>
+<body>
+
+<div class="main-container">
+    <div class="panel-left">
+        <h2>Parámetros de calidad</h2>
+        <p style="color: #95a5a6; font-size: 0.9rem; margin-bottom: 25px;">Ingrese las lecturas del sensor para clasificar el producto.</p>
+        
+        <form method="POST" action="/">
+            <div class="input-row">
+                <div class="input-group">
+                    <label>Largo (cm)</label>
+                    <input type="number" step="0.01" name="largo" value="{{ datos.largo }}" required placeholder="Ej: 50.0">
+                </div>
+                <div class="input-group">
+                    <label>Ancho (cm)</label>
+                    <input type="number" step="0.01" name="ancho" value="{{ datos.ancho }}" required placeholder="Ej: 20.0">
+                </div>
+            </div>
+
+            <label>Peso del material (g)</label>
+            <input type="number" step="0.01" name="peso" value="{{ datos.peso }}" required placeholder="Ej: 100.0">
+
+            <div class="input-row">
+                <div class="input-group">
+                    <label>Índice color (0-1)</label>
+                    <input type="number" step="0.01" min="0" max="1" name="color" value="{{ datos.color }}" required placeholder="Ej: 0.85">
+                </div>
+                <div class="input-group">
+                    <label>Índice textura (0-1)</label>
+                    <input type="number" step="0.01" min="0" max="1" name="textura" value="{{ datos.textura }}" required placeholder="Ej: 0.92">
+                </div>
+            </div>
+
+            <button type="submit">ANALIZAR PRODUCTO</button>
+        </form>
+    </div>
+
+    <div class="panel-right">
+        <div class="brand">ACERO-IA</div>
+
+        {% if prediccion %}
+        <div class="result-card">
+            <div style="text-transform: uppercase; color: #7f8c8d; font-size: 0.8rem; font-weight: bold; letter-spacing: 1px;">Clasificación del Modelo</div>
+            
+            <div class="defect-name text-{{ css_class }}">
+                {% if prediccion == 'DEFECTUOSO' %}
+                    <span style="color: #e74c3c;">{{ prediccion }}</span>
+                {% elif prediccion == 'ESTÁNDAR' %}
+                    <span style="color: #f39c12;">{{ prediccion }}</span>
+                {% else %}
+                    <span style="color: #27ae60;">{{ prediccion }}</span>
+                {% endif %}
+            </div>
+            
+            <div class="progress-track">
+                <div class="progress-fill" style="width: 100%; 
+                    background: {% if prediccion == 'DEFECTUOSO' %}#e74c3c{% elif prediccion == 'ESTÁNDAR' %}#f39c12{% else %}#27ae60{% endif %};">
+                    {{ probabilidad }} de "certeza algorítmica"
+                </div>
+            </div>
+
+            <div class="model-info">
+                <span>Modelo: <strong>SVM (RBF)</strong></span>
+                <span>Precisión global: <strong>{{ acc }}</strong></span>
+            </div>
+        </div>
+        {% else %}
+        <div style="text-align: center; color: #bdc3c7;">
+            <div style="font-size: 4rem; opacity: 0.3; margin-bottom: 20px;"></div>
+            <h3>Sistema en espera</h3>
+            <p style="max-width: 300px; margin: 0 auto; font-size: 0.9rem;">Ingrese los parámetros físicos y de superficie en el panel izquierdo para iniciar el análisis de calidad.</p>
+        </div>
+        {% endif %}
+    </div>
+</div>
+
+</body>
+</html>
